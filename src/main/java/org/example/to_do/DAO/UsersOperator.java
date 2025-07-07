@@ -75,4 +75,23 @@ public class UsersOperator {
         return false;
     }
 
+    public boolean DoesUserExists(String email) {
+        String SQLRequest = "SELECT email FROM users WHERE email = ?";
+
+        try(Connection con = database.getConnection();
+            PreparedStatement ps = con.prepareStatement(SQLRequest)){
+
+            ps.setString(1, email);
+
+            try(ResultSet rs = ps.executeQuery()){
+                return rs.next();
+            }
+
+        } catch (SQLException e){
+            e.printStackTrace();
+        }
+        return false;
+
+    }
+
 }

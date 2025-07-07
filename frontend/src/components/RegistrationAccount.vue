@@ -1,6 +1,7 @@
 <template>
   <div class="register">
     <h1 class="SiteName">Task manager</h1>
+    <p>Please register an account</p>
     <input type="text" v-model="name" placeholder="Enter your name"/>
     <input type="text" v-model="email" placeholder="Enter your email"/>
     <input type="text" v-model="password" placeholder="Enter your password"/>
@@ -44,6 +45,23 @@
 
     socket.value.onmessage = (msg) => {
       console.log('Message from backend: ', msg)
+      const data = JSON.parse(msg.data)
+
+      try {
+        switch (data.type) {
+          case 'register_success':
+            alert(`Thank you for registration ${data.message}!`);
+            break;
+          case 'user_exists':
+            alert(`Sorry but this user has already been registered!`);
+            break;
+          default:
+            console.warn('Unknown message from backend: ', msg);
+        }
+      } catch (error) {
+        console.error(data);
+        console.error('Error parsing message from server: ', error)
+      }
     }
   }
 
@@ -67,6 +85,36 @@
 </script>
 
 <style>
+
+.reg_button {
+  background-color: #747bff;
+  border-radius: 3px;
+  border-color: #444cef;
+  transition: all .3s ease-in-out;
+  cursor: pointer;
+  outline: none;
+}
+
+.reg_button:hover {
+  transform: scale(1.03);
+  outline: none;
+}
+
+.reg_button:active {
+  background-color: #5f67da;
+  border-color: #3b43ef;
+  transition: .05s;
+  transform: scale(0.98);
+  outline: none;
+}
+
+.reg_button,
+.reg_button:focus,
+.reg_button:focus-visible,
+.reg_button:active,
+.reg_button:hover {
+  outline: none !important;
+}
 
 .register {
   width: 400px;

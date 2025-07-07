@@ -14,9 +14,9 @@ public class RegistrationService {
 
     public void RegUser(String username, String email, String password) {
         usersOperator.insertUser(username, email, password);
-        System.out.println(username);
-        System.out.println(email);
-        System.out.println(password);
+        System.out.println("Username: " + username);
+        System.out.println("Email: " + email);
+        System.out.println("Password: " + password);
     }
 
 
