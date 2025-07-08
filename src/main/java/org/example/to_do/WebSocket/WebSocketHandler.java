@@ -3,6 +3,8 @@ package org.example.to_do.WebSocket;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.websocket.server.ServerEndpoint;
+import org.example.to_do.Operations.GetUserInfoService;
+import org.example.to_do.Operations.LoginService;
 import org.example.to_do.Operations.RegistrationService;
 import org.example.to_do.Operations.UserExistsService;
 import org.springframework.boot.autoconfigure.integration.IntegrationProperties;
@@ -25,10 +27,14 @@ public class WebSocketHandler extends TextWebSocketHandler {
 
     private final ObjectMapper mapper = new ObjectMapper();
     private final RegistrationService RegService;
+    private final LoginService loginService;
     private final UserExistsService DoesUserExistsService;
+    private final GetUserInfoService getUserInfoService;
     private final List<WebSocketSession> sessions = new CopyOnWriteArrayList<>();
 
-    public WebSocketHandler(RegistrationService RegService, UserExistsService DoesUserExistsService) {
+    public WebSocketHandler(GetUserInfoService getUserInfoService,LoginService loginService,RegistrationService RegService, UserExistsService DoesUserExistsService) {
+        this.loginService = loginService;
+        this.getUserInfoService = getUserInfoService;
         this.RegService = RegService;
         this.DoesUserExistsService = DoesUserExistsService;
     }
@@ -65,6 +71,38 @@ public class WebSocketHandler extends TextWebSocketHandler {
                     dataMap.put("type", "register_success");
                     dataMap.put("message", name);
 
+                    json = mapper.writeValueAsString(dataMap);
+                    System.out.println(json);
+
+                    if (session.isOpen()) {
+                        session.sendMessage(new TextMessage(json));
+                    }
+                }
+            } else if (type.equals("login")) {
+
+                //Get data for login
+                JsonNode data = root.get("data");
+                String email = data.get("email").asText();
+                String password = data.get("password").asText();
+
+                boolean correct = loginService.LoginUser(email, password);
+                if (correct) {
+                    //Get users information
+                    dataMap.put("type", "login_success");
+                    dataMap.put("message", getUserInfoService.GetUsersInfo(email));
+
+                    //Send it
+                    json = mapper.writeValueAsString(dataMap);
+                    System.out.println(json);
+
+                    if (session.isOpen()) {
+                        session.sendMessage(new TextMessage(json));
+                    }
+                } else {
+                    //Failed to log in
+                    dataMap.put("type", "login_fail");
+
+                    //Send it
                     json = mapper.writeValueAsString(dataMap);
                     System.out.println(json);
 

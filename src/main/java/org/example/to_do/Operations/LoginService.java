@@ -4,18 +4,19 @@ import org.example.to_do.DAO.UsersOperator;
 import org.springframework.stereotype.Service;
 
 @Service
-public class RegistrationService {
+public class LoginService {
 
     private final UsersOperator usersOperator;
 
-    public RegistrationService(UsersOperator usersOperator) {
+    public LoginService(UsersOperator usersOperator) {
         this.usersOperator = usersOperator;
     }
 
-    public void RegUser(String username, String email, String password) {
-        usersOperator.insertUser(username, email, password);
-        System.out.println("Username: " + username);
+    public boolean LoginUser(String email, String password) {
         System.out.println("Email: " + email);
         System.out.println("Password: " + password);
+        return usersOperator.CheckUsersPassword(password, email);
     }
+
+
 }

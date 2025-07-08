@@ -6,11 +6,17 @@
     <input type="text" v-model="email" placeholder="Enter your email"/>
     <input type="text" v-model="password" placeholder="Enter your password"/>
     <button  class="reg_button" @click="register">Register</button>
+    <p>
+      If you have account,
+      <router-link to="/login" class="register-link">log in it here</router-link>
+    </p>
   </div>
 </template>
 
 <script setup>
   import {onBeforeUnmount, onMounted, ref} from 'vue'
+  import {useRouter} from 'vue-router'
+  const router = useRouter()
   const name = ref('')
   const email = ref('')
   const password = ref('')
@@ -51,6 +57,7 @@
         switch (data.type) {
           case 'register_success':
             alert(`Thank you for registration ${data.message}!`);
+            router.push('/login')
             break;
           case 'user_exists':
             alert(`Sorry but this user has already been registered!`);

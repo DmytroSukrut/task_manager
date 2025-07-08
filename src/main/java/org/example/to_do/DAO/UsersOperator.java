@@ -51,7 +51,27 @@ public class UsersOperator {
         return encoder.encode(password);
     }
 
-    public boolean checkUser(String pas_to_check, String email) {
+    public String GetUsersInfo(String email) {
+        String SQLRequest = "SELECT name FROM users WHERE email = ?";
+        try(Connection con = database.getConnection();
+            PreparedStatement ps = con.prepareStatement(SQLRequest)){
+            ps.setString(1, email);
+
+            try(ResultSet rs = ps.executeQuery()){
+                if(rs.next()){
+                    return rs.getString("name");
+                } else {
+                    System.out.println("User " + email + " not found");
+                    return null;
+                }
+            }
+        } catch (SQLException e){
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public boolean CheckUsersPassword(String pas_to_check, String email) {
         String SQLRequest = "SELECT password FROM users WHERE email = ?";
 
         try(Connection con = database.getConnection();

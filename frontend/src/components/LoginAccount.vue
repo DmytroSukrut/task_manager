@@ -1,11 +1,14 @@
 <template>
-  <div class="register">
+  <div class="login">
     <h1 class="SiteName">Task manager</h1>
-    <p>Please register an account</p>
-    <input type="text" v-model="name" placeholder="Enter your name"/>
+    <p>Please login in account</p>
     <input type="text" v-model="email" placeholder="Enter your email"/>
     <input type="text" v-model="password" placeholder="Enter your password"/>
-    <button  class="reg_button" @click="register">Register</button>
+    <button class="login_button" @click="login">Login</button>
+    <p>
+      If you dont have account,
+      <router-link to="/register" class="register-link">create it here</router-link>
+    </p>
   </div>
 </template>
 
@@ -16,11 +19,10 @@ const email = ref('')
 const password = ref('')
 const socket = ref(null)
 
-function register() {
+function login() {
   const message = {
-    type: 'register',
+    type: 'login',
     data: {
-      name: name.value,
       email: email.value,
       password: password.value
     }
@@ -45,15 +47,16 @@ function connectWebsocket(){
 
   socket.value.onmessage = (msg) => {
     console.log('Message from backend: ', msg)
-    const data = JSON.parse(msg.data)
+    const root = JSON.parse(msg.data)
+    name.value = root.message
 
     try {
-      switch (data.type) {
-        case 'register_success':
-          alert(`Thank you for registration ${data.message}!`);
+      switch (root.type) {
+        case 'login_success':
+          alert(`You have successfully logged in ${name.value}!`);
           break;
-        case 'user_exists':
-          alert(`Sorry but this user has already been registered!`);
+        case 'login_fail':
+          alert(`Wrong email or password`);
           break;
         default:
           console.warn('Unknown message from backend: ', msg);
@@ -86,7 +89,16 @@ onBeforeUnmount(() => {
 
 <style>
 
-.reg_button {
+.register-link {
+  cursor: pointer;
+  color: #747bff;
+  text-decoration: underline;
+}
+.register-link:hover {
+  color: #5f67da;
+}
+
+.login_button {
   background-color: #747bff;
   border-radius: 3px;
   border-color: #444cef;
@@ -95,12 +107,12 @@ onBeforeUnmount(() => {
   outline: none;
 }
 
-.reg_button:hover {
+.login_button:hover {
   transform: scale(1.03);
   outline: none;
 }
 
-.reg_button:active {
+.login_button:active {
   background-color: #5f67da;
   border-color: #3b43ef;
   transition: .05s;
@@ -108,15 +120,15 @@ onBeforeUnmount(() => {
   outline: none;
 }
 
-.reg_button,
-.reg_button:focus,
-.reg_button:focus-visible,
-.reg_button:active,
-.reg_button:hover {
+.login_button,
+.login_button:focus,
+.login_button:focus-visible,
+.login_button:active,
+.login_button:hover {
   outline: none !important;
 }
 
-.register {
+.login {
   width: 400px;
   margin: 10px auto;
   padding: 30px;
@@ -128,7 +140,7 @@ onBeforeUnmount(() => {
   box-shadow: 0 1px 10px black;
 }
 
-.register input {
+.login input {
   margin-bottom: 12px;
   padding: 10px;
 }
