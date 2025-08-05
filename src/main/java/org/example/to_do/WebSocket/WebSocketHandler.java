@@ -3,10 +3,7 @@ package org.example.to_do.WebSocket;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.websocket.server.ServerEndpoint;
-import org.example.to_do.Operations.GetUserInfoService;
-import org.example.to_do.Operations.LoginService;
-import org.example.to_do.Operations.RegistrationService;
-import org.example.to_do.Operations.UserExistsService;
+import org.example.to_do.Operations.*;
 import org.springframework.boot.autoconfigure.integration.IntegrationProperties;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.CloseStatus;
@@ -30,13 +27,15 @@ public class WebSocketHandler extends TextWebSocketHandler {
     private final LoginService loginService;
     private final UserExistsService DoesUserExistsService;
     private final GetUserInfoService getUserInfoService;
+    private final GetTaskService getTaskService;
     private final List<WebSocketSession> sessions = new CopyOnWriteArrayList<>();
 
-    public WebSocketHandler(GetUserInfoService getUserInfoService,LoginService loginService,RegistrationService RegService, UserExistsService DoesUserExistsService) {
+    public WebSocketHandler(GetTaskService getTaskService, GetUserInfoService getUserInfoService, LoginService loginService, RegistrationService RegService, UserExistsService DoesUserExistsService) {
         this.loginService = loginService;
         this.getUserInfoService = getUserInfoService;
         this.RegService = RegService;
         this.DoesUserExistsService = DoesUserExistsService;
+        this.getTaskService = getTaskService;
     }
 
     @Override
@@ -109,6 +108,18 @@ public class WebSocketHandler extends TextWebSocketHandler {
                     if (session.isOpen()) {
                         session.sendMessage(new TextMessage(json));
                     }
+                }
+            } else if (type.equals("get_random_task")) {
+                String task = getTaskService.GetRandomTask();
+
+                dataMap.put("type", "random_task_got");
+                dataMap.put("message", task);
+
+                json = mapper.writeValueAsString(dataMap);
+                System.out.println(json);
+
+                if (session.isOpen()) {
+                    session.sendMessage(new TextMessage(json));
                 }
             }
         } catch (Exception e) {

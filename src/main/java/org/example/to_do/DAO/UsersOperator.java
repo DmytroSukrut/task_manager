@@ -33,6 +33,85 @@ public class UsersOperator {
         }
     }
 
+    //Create Operator
+    public void insertList(int user_id, String ListName) {
+        String SQLRequest = "INSERT INTO lists (user_id, name) VALUES (?,?)";
+
+        try(Connection con = database.getConnection();
+            PreparedStatement ps = con.prepareStatement(SQLRequest)){
+
+            ps.setInt(1, user_id);
+            ps.setString(2, ListName);
+            ps.executeUpdate();
+            System.out.println("List: " + ListName + " inserted");
+        } catch (SQLException e){
+            if ("23505".equals(e.getSQLState())) {
+                System.out.println("List \"" + ListName + "\" already exists for this user.");
+            } else {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    //Create operator
+    public int getUserID(String UserEmail) {
+        String SQLRequest = "SELECT id FROM users WHERE email = ?";
+
+        try(Connection con = database.getConnection();
+            PreparedStatement ps = con.prepareStatement(SQLRequest)){
+
+            ps.setString(1, UserEmail);
+
+            try(ResultSet rs = ps.executeQuery()){
+                if(rs.next()){
+                    return rs.getInt("id");
+                }
+            }
+        } catch (SQLException e){
+            e.printStackTrace();
+        }
+        return -1;
+    }
+
+    //Create operator
+    public int getListID(int user_id, String List_name) {
+        String SQLRequest = "SELECT id FROM lists WHERE user_id = ? AND name = ?";
+
+        try(Connection con = database.getConnection();
+            PreparedStatement ps = con.prepareStatement(SQLRequest)){
+
+            ps.setInt(1, user_id);
+            ps.setString(2, List_name);
+
+            try(ResultSet rs = ps.executeQuery()){
+                if(rs.next()){
+                    return rs.getInt("id");
+                }
+            }
+        } catch (SQLException e){
+            e.printStackTrace();
+        }
+        return -1;
+    }
+
+    //Create Operator
+    public void insertTask(int list_id, String TaskName, String TaskExplanation, String TaskStatus) {
+        String SQLRequest = "INSERT INTO to_do_tasks (list_id, name, explanation, status) VALUES (?,?,?,?)";
+
+        try(Connection con = database.getConnection();
+            PreparedStatement ps = con.prepareStatement(SQLRequest)){
+
+            ps.setInt(1, list_id);
+            ps.setString(2, TaskName);
+            ps.setString(3, TaskExplanation);
+            ps.setString(4, TaskStatus);
+            ps.executeUpdate();
+            System.out.println("Task: " + TaskName + " inserted");
+        } catch (SQLException e){
+            e.printStackTrace();
+        }
+    }
+
     public void dropUsers(){
         String SQLRequest1 = "TRUNCATE TABLE users";
         String SQLRequest2 = "ALTER SEQUENCE users_id_seq RESTART WITH 1";

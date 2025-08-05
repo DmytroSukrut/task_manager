@@ -141,6 +141,7 @@
 }
 
 body {
-  background-color: white;
+  background: linear-gradient(140deg, rgba(2, 0, 36, 1) 0%, rgba(9, 9, 121, 1) 35%, rgba(0, 212, 255, 1) 100%);
+  z-index: 2;
 }
 </style>

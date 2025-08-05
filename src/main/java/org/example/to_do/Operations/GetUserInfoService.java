@@ -15,6 +15,4 @@ public class GetUserInfoService {
     public String GetUsersInfo(String email) {
         return usersOperator.GetUsersInfo(email);
     }
-
-
 }
