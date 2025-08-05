@@ -53,7 +53,7 @@ public class UsersOperator {
         }
     }
 
-    //Create operator
+    //Create operation
     public int getUserID(String UserEmail) {
         String SQLRequest = "SELECT id FROM users WHERE email = ?";
 
@@ -73,7 +73,7 @@ public class UsersOperator {
         return -1;
     }
 
-    //Create operator
+    //Create operation
     public int getListID(int user_id, String List_name) {
         String SQLRequest = "SELECT id FROM lists WHERE user_id = ? AND name = ?";
 
@@ -94,7 +94,7 @@ public class UsersOperator {
         return -1;
     }
 
-    //Create Operator
+    //Create operation
     public void insertTask(int list_id, String TaskName, String TaskExplanation, String TaskStatus) {
         String SQLRequest = "INSERT INTO to_do_tasks (list_id, name, explanation, status) VALUES (?,?,?,?)";
 
