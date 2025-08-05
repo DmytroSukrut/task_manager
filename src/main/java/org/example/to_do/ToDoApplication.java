@@ -29,7 +29,7 @@ public class ToDoApplication {
 
         //boolean IsCorrect = UsOperator.checkUser("Ababagalamaga", "Ltrdolil@gmail.com");
         //System.out.println(IsCorrect);
-        //UsOperator.insertUser("Limoncik", "Ltril@gmail.com", "Ababagalamaga");
+        //UsOperator.InsertUser("Limoncik", "Ltril@gmail.com", "Ababagalamaga");
         //UsOperator.dropUsers();
     }
 }

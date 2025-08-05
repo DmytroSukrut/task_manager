@@ -1,6 +1,6 @@
 <template>
   <div class="top-panel">
-    <button class="MainPage">Task manager</button>
+    <button class="MainPage" @click="CheckLAT">Task manager</button>
     <button class="Features">Features</button>
     <button class="About">About</button>
     <div class="spacer"></div>
@@ -43,6 +43,7 @@ import VanillaTilt from 'vanilla-tilt'
 
 const tiltElement = ref(null)
 const router = useRouter()
+const userID = ref('1')
 const taskText = ref('')
 const socket = ref(null)
 
@@ -50,6 +51,16 @@ const animateTask = ref(false)
 
   function GoLogIn() {
     router.push('/login')
+  }
+
+  function CheckLAT() {
+    const message = {
+      type: 'get_users_lists_and_tasks',
+      data: {
+        userID: userID.value,
+      }
+    }
+    SendMessageToBack(JSON.stringify(message))
   }
 
   function GetRandomTask() {
@@ -83,13 +94,16 @@ const animateTask = ref(false)
     }
 
     socket.value.onmessage = (msg) => {
-      console.log('Message from backend: ', msg)
       const data = JSON.parse(msg.data)
+      console.log('Message from backend: ', JSON.stringify(data, null, 2))
 
       try {
         switch (data.type) {
           case 'random_task_got':
             taskText.value = data.message;
+            break;
+          case 'users_lists_and_tasks':
+            alert(`I got your lists and tasks Check them in console log`);
             break;
           default:
             console.warn('Unknown message from backend: ', msg);

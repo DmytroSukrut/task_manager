@@ -13,7 +13,7 @@ public class RegistrationService {
     }
 
     public void RegUser(String username, String email, String password) {
-        usersOperator.insertUser(username, email, password);
+        usersOperator.InsertUser(username, email, password);
         System.out.println("Username: " + username);
         System.out.println("Email: " + email);
         System.out.println("Password: " + password);

@@ -56,7 +56,7 @@ function connectWebsocket(){
       switch (root.type) {
         case 'login_success':
           alert(`You have successfully logged in ${name.value}!`);
-          router.push('/');
+          router.push('/taskmanager');
           break;
         case 'login_fail':
           alert(`Wrong email or password`);

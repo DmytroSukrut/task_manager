@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.websocket.server.ServerEndpoint;
 import org.example.to_do.Operations.*;
+import org.example.to_do.SpecialClasses.ListDTO;
 import org.springframework.boot.autoconfigure.integration.IntegrationProperties;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.CloseStatus;
@@ -27,15 +28,18 @@ public class WebSocketHandler extends TextWebSocketHandler {
     private final LoginService loginService;
     private final UserExistsService DoesUserExistsService;
     private final GetUserInfoService getUserInfoService;
+    private final GetUsersListsAndTasksService getUsersListsAndTasksService;
     private final GetTaskService getTaskService;
     private final List<WebSocketSession> sessions = new CopyOnWriteArrayList<>();
 
-    public WebSocketHandler(GetTaskService getTaskService, GetUserInfoService getUserInfoService, LoginService loginService, RegistrationService RegService, UserExistsService DoesUserExistsService) {
+    public WebSocketHandler(GetTaskService getTaskService, GetUserInfoService getUserInfoService, LoginService loginService, RegistrationService RegService,
+                            UserExistsService DoesUserExistsService, GetUsersListsAndTasksService getUsersListsAndTasksService) {
         this.loginService = loginService;
         this.getUserInfoService = getUserInfoService;
         this.RegService = RegService;
         this.DoesUserExistsService = DoesUserExistsService;
         this.getTaskService = getTaskService;
+        this.getUsersListsAndTasksService = getUsersListsAndTasksService;
     }
 
     @Override
@@ -114,6 +118,22 @@ public class WebSocketHandler extends TextWebSocketHandler {
 
                 dataMap.put("type", "random_task_got");
                 dataMap.put("message", task);
+
+                json = mapper.writeValueAsString(dataMap);
+                System.out.println(json);
+
+                if (session.isOpen()) {
+                    session.sendMessage(new TextMessage(json));
+                }
+            } else if (type.equals("get_users_lists_and_tasks")) {
+                JsonNode data = root.get("data");
+                String temp = data.get("userID").asText();
+                int userID = Integer.parseInt(temp);
+
+                List<ListDTO> lists_and_tasks = getUsersListsAndTasksService.getUsersListsAndTasks(userID);
+
+                dataMap.put("type", "users_lists_and_tasks");
+                dataMap.put("message", lists_and_tasks);
 
                 json = mapper.writeValueAsString(dataMap);
                 System.out.println(json);

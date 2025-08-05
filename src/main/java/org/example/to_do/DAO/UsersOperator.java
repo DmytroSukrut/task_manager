@@ -1,10 +1,16 @@
 package org.example.to_do.DAO;
 
+import org.example.to_do.SpecialClasses.ListDTO;
+import org.example.to_do.SpecialClasses.TaskDTO;
 import org.example.to_do.database.Database;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Component;
 
 import java.sql.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Component
 public class UsersOperator {
@@ -17,7 +23,7 @@ public class UsersOperator {
         this.database = database;
     }
 
-    public void insertUser(String UserName, String email, String password) {
+    public void InsertUser(String UserName, String email, String password) {
         String SQLRequest = "INSERT INTO users (name, email, password) VALUES (?, ?, ?)";
 
         try(Connection con = database.getConnection();
@@ -34,7 +40,7 @@ public class UsersOperator {
     }
 
     //Create Operator
-    public void insertList(int user_id, String ListName) {
+    public void InsertList(int user_id, String ListName) {
         String SQLRequest = "INSERT INTO lists (user_id, name) VALUES (?,?)";
 
         try(Connection con = database.getConnection();
@@ -54,7 +60,7 @@ public class UsersOperator {
     }
 
     //Create operation
-    public int getUserID(String UserEmail) {
+    public int GetUserID(String UserEmail) {
         String SQLRequest = "SELECT id FROM users WHERE email = ?";
 
         try(Connection con = database.getConnection();
@@ -74,7 +80,7 @@ public class UsersOperator {
     }
 
     //Create operation
-    public int getListID(int user_id, String List_name) {
+    public int GetListID(int user_id, String List_name) {
         String SQLRequest = "SELECT id FROM lists WHERE user_id = ? AND name = ?";
 
         try(Connection con = database.getConnection();
@@ -95,7 +101,7 @@ public class UsersOperator {
     }
 
     //Create operation
-    public void insertTask(int list_id, String TaskName, String TaskExplanation, String TaskStatus) {
+    public void InsertTask(int list_id, String TaskName, String TaskExplanation, String TaskStatus) {
         String SQLRequest = "INSERT INTO to_do_tasks (list_id, name, explanation, status) VALUES (?,?,?,?)";
 
         try(Connection con = database.getConnection();
@@ -110,6 +116,55 @@ public class UsersOperator {
         } catch (SQLException e){
             e.printStackTrace();
         }
+    }
+
+    //Create operation
+    public List<ListDTO> GetUsersListsAndTasks(int user_id) {
+        Map<String, ListDTO> lists_and_tasks = new HashMap<>();
+
+        String SQLRequest = """
+                SELECT
+                    l.name AS list_name,
+                    tdt.name AS task_name,
+                    tdt.explanation AS task_explanation,
+                    tdt.status AS task_status
+                FROM lists l
+                JOIN users u on l.user_id = u.id
+                LEFT JOIN to_do_tasks tdt on l.id = tdt.list_id
+                WHERE u.id = (?);
+                """;
+
+        try(Connection con = database.getConnection();
+            PreparedStatement ps = con.prepareStatement(SQLRequest)){
+
+            ps.setInt(1, user_id);
+
+            try(ResultSet rs = ps.executeQuery()){
+                while(rs.next()){
+                    String listName = rs.getString("list_name");
+
+                    ListDTO listDTO = lists_and_tasks.get(listName);
+                    if(listDTO == null){
+                        listDTO = new ListDTO(listName);
+                        lists_and_tasks.put(listName, listDTO);
+                    }
+
+                    String taskName = rs.getString("task_name");
+                    if(taskName != null){
+                        String taskExplanation = rs.getString("task_explanation");
+                        String taskStatus = rs.getString("task_status");
+
+                        TaskDTO taskDTO = new TaskDTO(taskName, taskExplanation, taskStatus);
+                        listDTO.getTasks().add(taskDTO);
+                    }
+
+                }
+            }
+        } catch (SQLException e){
+            e.printStackTrace();
+        }
+
+        return new ArrayList<>(lists_and_tasks.values());
     }
 
     public void dropUsers(){
