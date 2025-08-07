@@ -30,16 +30,21 @@ public class WebSocketHandler extends TextWebSocketHandler {
     private final GetUserInfoService getUserInfoService;
     private final GetUsersListsAndTasksService getUsersListsAndTasksService;
     private final GetTaskService getTaskService;
+    private final InsertTaskService insertTaskService;
+    private final GetListIDService getListIDService;
     private final List<WebSocketSession> sessions = new CopyOnWriteArrayList<>();
 
-    public WebSocketHandler(GetTaskService getTaskService, GetUserInfoService getUserInfoService, LoginService loginService, RegistrationService RegService,
-                            UserExistsService DoesUserExistsService, GetUsersListsAndTasksService getUsersListsAndTasksService) {
+    public WebSocketHandler(GetTaskService getTaskService, GetUserInfoService getUserInfoService,
+                            LoginService loginService, RegistrationService RegService, UserExistsService DoesUserExistsService, GetUsersListsAndTasksService getUsersListsAndTasksService,
+                            InsertTaskService insertTaskService, GetListIDService getListIDService) {
         this.loginService = loginService;
         this.getUserInfoService = getUserInfoService;
         this.RegService = RegService;
         this.DoesUserExistsService = DoesUserExistsService;
         this.getTaskService = getTaskService;
         this.getUsersListsAndTasksService = getUsersListsAndTasksService;
+        this.insertTaskService = insertTaskService;
+        this.getListIDService = getListIDService;
     }
 
     @Override
@@ -134,6 +139,26 @@ public class WebSocketHandler extends TextWebSocketHandler {
 
                 dataMap.put("type", "users_lists_and_tasks");
                 dataMap.put("message", lists_and_tasks);
+
+                json = mapper.writeValueAsString(dataMap);
+                System.out.println(json);
+
+                if (session.isOpen()) {
+                    session.sendMessage(new TextMessage(json));
+                }
+            } else if (type.equals("insert_task")) {
+                JsonNode data = root.get("data");
+                String temp = data.get("userID").asText();
+                int userID = Integer.parseInt(temp);
+                String listName = data.get("listName").asText();
+                int listID = getListIDService.getListID(userID, listName);
+                String taskName = data.get("taskName").asText();
+                String taskDescription = data.get("taskDescription").asText();
+                String taskStatus = data.get("taskStatus").asText();
+
+                insertTaskService.insertTask(listID, taskName, taskDescription, taskStatus);
+
+                dataMap.put("type", "insert_task_success");
 
                 json = mapper.writeValueAsString(dataMap);
                 System.out.println(json);

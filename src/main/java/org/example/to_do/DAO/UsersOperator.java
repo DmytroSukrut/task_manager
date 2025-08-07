@@ -100,9 +100,8 @@ public class UsersOperator {
         return -1;
     }
 
-    //Create operation
     public void InsertTask(int list_id, String TaskName, String TaskExplanation, String TaskStatus) {
-        String SQLRequest = "INSERT INTO to_do_tasks (list_id, name, explanation, status) VALUES (?,?,?,?)";
+        String SQLRequest = "INSERT INTO to_do_tasks (list_id, name, explanation, status) VALUES (?,?,?,?::task_status)";
 
         try(Connection con = database.getConnection();
             PreparedStatement ps = con.prepareStatement(SQLRequest)){
@@ -118,7 +117,6 @@ public class UsersOperator {
         }
     }
 
-    //Create operation
     public List<ListDTO> GetUsersListsAndTasks(int user_id) {
         Map<String, ListDTO> lists_and_tasks = new HashMap<>();
 
@@ -131,7 +129,15 @@ public class UsersOperator {
                 FROM lists l
                 JOIN users u on l.user_id = u.id
                 LEFT JOIN to_do_tasks tdt on l.id = tdt.list_id
-                WHERE u.id = (?);
+                WHERE u.id = (?)
+                ORDER BY
+                    l.name,
+                    CASE tdt.status
+                        WHEN 'started' THEN 1
+                        WHEN 'not_started' THEN 2
+                        WHEN 'finished' THEN 3
+                        ELSE 4
+                    END;
                 """;
 
         try(Connection con = database.getConnection();
