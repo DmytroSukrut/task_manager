@@ -3,16 +3,21 @@ package org.example.to_do.SpecialClasses;
 //DTO - Data Transfer Object
 
 public class TaskDTO {
+    private int taskID;
     private String taskName;
     private String taskExplanation;
     private String taskStatus;
 
-    public TaskDTO(String taskName, String taskExplanation, String taskStatus) {
+    public TaskDTO(int taskID, String taskName, String taskExplanation, String taskStatus) {
+        this.taskID = taskID;
         this.taskName = taskName;
         this.taskExplanation = taskExplanation;
         this.taskStatus = taskStatus;
     }
 
+    public int getTaskID() {
+        return taskID;
+    }
     public String getTaskName() {
         return taskName;
     }
@@ -21,6 +26,9 @@ public class TaskDTO {
     }
     public String getTaskStatus() {
         return taskStatus;
+    }
+    public void setTaskID(int taskID) {
+        this.taskID = taskID;
     }
     public void setTaskName(String taskName) {
         this.taskName = taskName;

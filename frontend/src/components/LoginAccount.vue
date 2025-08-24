@@ -16,6 +16,7 @@
 import {onBeforeUnmount, onMounted, ref} from 'vue'
 import {useRouter} from 'vue-router'
 const router = useRouter()
+const id = ref(null)
 const name = ref('')
 const email = ref('')
 const password = ref('')
@@ -49,12 +50,25 @@ function connectWebsocket(){
 
   socket.value.onmessage = (msg) => {
     console.log('Message from backend: ', msg)
-    const root = JSON.parse(msg.data)
-    name.value = root.message
+    const data = JSON.parse(msg.data)
 
     try {
-      switch (root.type) {
+      switch (data.type) {
         case 'login_success':
+          id.value = data.user_id;
+          name.value = data.user_name;
+          email.value = data.user_email;
+
+
+          const profile = {
+            UserID: id.value,
+            UserName: name.value,
+            UserEmail: email.value,
+            ts: Date.now()
+          }
+
+          localStorage.setItem('prof', JSON.stringify(profile));
+
           alert(`You have successfully logged in ${name.value}!`);
           router.push('/taskmanager');
           break;

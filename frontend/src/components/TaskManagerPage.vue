@@ -1,13 +1,19 @@
 <template>
   <div class="top-panel-tm">
     <h1>Task Manager</h1>
-    <button @click="checkLAT">Check</button>
+    <button @click="logOut">Log Out</button>
   </div>
   <div class="content">
     <div class="lists">
       <div class="lists-here">
         <h3 class="text">Your lists here</h3>
       </div>
+      <button
+          class="add-new-list-button"
+          @click="showListPopup = true"
+      >
+        Add new list
+      </button>
       <button
       v-for="list in userLists"
       :key="list.listName"
@@ -27,7 +33,7 @@
         <button
             v-if="selectedListName"
             class="add-new-task-button"
-            @click="checkADDTASK"
+            @click="showTaskPopup = true"
         >
           Add new task
         </button>
@@ -47,6 +53,103 @@
       </ul>
     </div>
   </div>
+  <div class="insert-list-popup"
+       :class="{ open: showListPopup }"
+       @click.self="showListPopup = false; clearNewListName()">
+    <div class="in-list-popup">
+      <button class="close-cross" @click="showListPopup = false; clearNewListName()">✖</button>
+
+      <h2 class="insert-list-text">Insert new list</h2>
+
+      <div class="list-name-info">
+        <label for="listName" class="new-list-name-label">List name:</label>
+        <a class="attention">List name must be different from those you have</a>
+      </div>
+
+
+      <input
+        v-model="newListName"
+        type="text"
+        placeholder="Enter list name..."
+        class="new-list-name-textbox"
+        maxlength="50"
+      >
+
+
+      <button
+          class="insert-list-button"
+          @click="checkADDLIST(); showListPopup = false"
+      >
+        INSERT LIST
+      </button>
+    </div>
+  </div>
+
+  <div class="insert-task-popup"
+       :class="{ open: showTaskPopup }"
+       @click.self="showTaskPopup = false; clearNewTask()">
+    <div class="in-task-popup">
+      <button class="close-cross" @click="showTaskPopup = false; clearNewTask()">✖</button>
+
+      <h2 class="insert-task-text">Insert new task</h2>
+
+      <div class="task-name-info">
+        <label for="taskName" class="new-task-name-label">Task name:</label>
+      </div>
+
+      <div>
+        <input
+            v-model="newTaskName"
+            type="text"
+            placeholder="Enter task name..."
+            class="new-task-name-textbox"
+            maxlength="100"
+        >
+      </div>
+
+      <div class="task-name-info">
+        <label for="taskName" class="new-task-name-label">Task description:</label>
+      </div>
+
+      <div>
+        <textarea
+            v-model="newTaskDescription"
+            placeholder="Enter task description..."
+            class="new-task-description-textbox"
+            maxlength="1000"
+        ></textarea>
+        <p>{{ newTaskDescription.length }}/1000</p>
+
+      </div>
+
+      <div class="task-dropdown-info">
+        <label for="taskName" class="new-task-name-label">Pick task status:</label>
+
+        <div
+            class="dropdown"
+            @mouseenter="showDropDownMenu = true"
+            @mouseleave="showDropDownMenu = false"
+        >
+          <button class="dropbtn">{{ newTaskStatusDisplay }}</button>
+          <transition name="dd">
+            <div class="dropdown-content" v-show="showDropDownMenu">
+              <a @click.prevent="newTaskStatus = 'not_started'; newTaskStatusDisplay = 'To do'">To do</a>
+              <a @click.prevent="newTaskStatus = 'started'; newTaskStatusDisplay = 'In progress'">In progress</a>
+              <a @click.prevent="newTaskStatus = 'finished'; newTaskStatusDisplay = 'Finished'">Finished</a>
+            </div>
+          </transition>
+        </div>
+
+      </div>
+
+      <button
+          class="insert-task-button"
+          @click="checkADDTASK(); showTaskPopup = false"
+      >
+        INSERT TASK
+      </button>
+    </div>
+  </div>
 </template>
 
 <script setup>
@@ -55,14 +158,30 @@ import {useRouter} from 'vue-router'
 const router = useRouter()
 const socket = ref(null)
 
-const userID = ref('1')
+const prof = getProf()
+const userID = ref(prof?.UserID)
+const userName = ref(prof?.UserName)
+const userEmail = ref(prof?.UserEmail)
+
 const userLists = ref([])
 const selectedListName = ref(null)
-const taskName = ref('Buy some bread')
-const taskDescription = ref('Buy some tasty bulochek')
-const taskStatus = ref('started')
+const newTaskName = ref('')
+const newTaskDescription = ref('')
+const newTaskStatus = ref('not_started')
+const newTaskStatusDisplay = ref('to do')
+
+const newListName = ref(null)
+
+//popup code
+const showListPopup = ref(false)
+const showTaskPopup = ref(false)
+const showDropDownMenu = ref(false)
 
 onMounted(() => {
+  if (userName.value === null || userName.value === undefined) {
+    router.push('/login');
+    return;
+  }
   connectWebsocket();
 })
 
@@ -79,20 +198,68 @@ function checkLAT() {
     }
   }
   SendMessageToBack(JSON.stringify(message))
+  clearNewListName()
 }
 
 function checkADDTASK() {
+  const name = (newTaskName.value ?? '').trim();
+  if (!name) {
+    alert("Min length is 1");
+    return;
+  }
   const message = {
     type: 'insert_task',
     data: {
       userID: userID.value,
       listName: selectedListName.value,
-      taskName: taskName.value,
-      taskDescription: taskDescription.value,
-      taskStatus: taskStatus.value
+      taskName: newTaskName.value,
+      taskDescription: newTaskDescription.value,
+      taskStatus: newTaskStatus.value
     }
   }
   SendMessageToBack(JSON.stringify(message))
+  clearNewTask()
+}
+
+function checkADDLIST() {
+  const name = (newListName.value ?? '').trim();
+  if (!name) {
+    alert("Min length is 1");
+    return;
+  }
+  const message = {
+    type: 'insert_list',
+    data: {
+      userID: userID.value,
+      listName: newListName.value
+    }
+  }
+  SendMessageToBack(JSON.stringify(message))
+}
+
+function logOut() {
+  socket.value?.close()
+  localStorage.removeItem('prof')
+  router.replace('/login')
+}
+
+function getProf() {
+  try {
+    return JSON.parse(localStorage.getItem('prof') || 'null')
+  } catch (e) {
+    return null
+  }
+}
+
+function clearNewListName() {
+  newListName.value = ''
+}
+
+function clearNewTask() {
+  newTaskName.value = ''
+  newTaskDescription.value = ''
+  newTaskStatus.value = 'not_started'
+  newTaskStatusDisplay.value = 'To do'
 }
 
 function connectWebsocket() {
@@ -129,6 +296,12 @@ function connectWebsocket() {
             checkLAT();
           }, 10);
           break;
+        case 'insert_list_success':
+          console.log(data);
+          setTimeout(() => {
+            checkLAT();
+          }, 10);
+          break;
         default:
           console.warn('Unknown message from backend: ', msg);
       }
@@ -150,7 +323,297 @@ function SendMessageToBack(cmd) {
 
 <style>
 
+.insert-task-popup {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  backdrop-filter: blur(0px); /* blur */
+  -webkit-backdrop-filter: blur(0px); /* blur for Safari */
+
+  z-index: 2;
+  pointer-events: none;
+  opacity: 0;
+
+  transition:
+      opacity 0.3s ease-in-out,
+      backdrop-filter 0.3s ease-in-out,
+      -webkit-backdrop-filter 0.3s ease-in-out;
+}
+
+.insert-task-popup.open {
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.task-name-info{
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.task-dropdown-info {
+  padding-bottom: 20px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+.new-task-name-textbox{
+  background: rgba(255, 255, 255, 0.3); /* transparent white bg */
+  backdrop-filter: blur(10px); /* blur */
+  -webkit-backdrop-filter: blur(10px); /* blur for Safari */
+  border: 2px solid rgba(255, 255, 255, 0.4); /* light border */
+  border-radius: 5px;
+  width: 100%;
+  margin-top: 10px;
+  margin-bottom: 20px;
+  font-size: 25px;
+}
+
+.new-task-description-textbox{
+  background: rgba(255, 255, 255, 0.3); /* transparent white bg */
+  backdrop-filter: blur(10px); /* blur */
+  -webkit-backdrop-filter: blur(10px); /* blur for Safari */
+  border: 2px solid rgba(255, 255, 255, 0.4); /* light border */
+  border-radius: 5px;
+  width: 100%;
+  margin-top: 10px;
+  margin-bottom: 20px;
+  font-size: 25px;
+
+  resize: vertical;
+  min-height: 80px;
+  max-height: 270px;
+
+  overflow-y: auto;
+}
+
+.new-task-description-textbox::-webkit-scrollbar {
+  width: 10px;
+  background: rgba(255, 255, 255, 0.3); /* transparent white bg */
+  backdrop-filter: blur(10px); /* blur */
+  -webkit-backdrop-filter: blur(10px); /* blur for Safari */
+  border: 2px solid rgba(255, 255, 255, 0.4); /* light border */
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.new-task-description-textbox::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.3); /* прозорий чорний */
+  border-radius: 10px;
+  border: 2px solid rgba(255, 255, 255, 0.4); /* контур */
+  cursor: pointer;
+
+}
+
+.dropbtn {
+  width: 140px;
+  font-size: 16px;
+
+  background: rgba(33, 43, 255, 0.5); /* transparent white bg */
+  backdrop-filter: blur(10px); /* blur */
+  -webkit-backdrop-filter: blur(10px); /* blur for Safari */
+  border: 2px solid rgba(128, 135, 255, 0.7); /* light border */
+  border-radius: 10px;
+
+  cursor: pointer;
+  transition: all .3s ease-in-out;
+}
+
+/* The container <div> - needed to position the dropdown content */
+.dropdown {
+  position: relative;
+  display: inline-block;
+  padding-left: 20px;
+
+  transition: all .3s ease-in-out;
+}
+
+/* Dropdown Content (Hidden by Default) */
+.dropdown-content {
+  position: absolute;
+  background: rgba(255, 255, 255, 0.7); /* transparent white bg */
+  backdrop-filter: blur(10px); /* blur */
+  -webkit-backdrop-filter: blur(10px); /* blur for Safari */
+  border: 1px solid rgba(255, 255, 255, 0.2); /* light border */
+  border-radius: 10px;
+  min-width: 140px;
+  z-index: 20;
+
+  cursor: pointer;
+  transition: all .3s ease-in-out;
+}
+
+/* Links inside the dropdown */
+.dropdown-content a {
+  color: black;
+  padding: 12px 16px;
+  text-decoration: none;
+  display: block;
+  border: 2px;
+  border-radius: 10px;
+}
+
+/* Change color of dropdown links on hover */
+.dropdown-content a:hover {
+  background: rgba(148, 189, 255, 0.7); /* transparent white bg */
+  backdrop-filter: blur(10px); /* blur */
+  -webkit-backdrop-filter: blur(10px); /* blur for Safari */
+  border: 2px solid rgba(0, 103, 147, 0.2); /* light border */
+}
+
+.dd-enter-active, .dd-leave-active {
+  transition: opacity .18s ease, transform .22s ease;
+  will-change: opacity, transform;
+}
+
+.dd-enter-from, .dd-leave-to {
+  opacity: 0;
+  transform: translateY(6px) scale(0.98);
+}
+
+/* Change the background color of the dropdown button when the dropdown content is shown */
+.dropdown:hover .dropbtn {
+  background: rgba(166, 33, 255, 0.5); /* transparent white bg */
+  backdrop-filter: blur(10px); /* blur */
+  -webkit-backdrop-filter: blur(10px); /* blur for Safari */
+  border: 2px solid rgba(128, 135, 255, 0.7); /* light border */
+  border-radius: 10px;
+}
+
+.insert-task-button {
+  background: rgba(255, 255, 255, 0.3); /* transparent white bg */
+  backdrop-filter: blur(10px); /* blur */
+  -webkit-backdrop-filter: blur(10px); /* blur for Safari */
+  border: 2px solid rgba(255, 255, 255, 0.4); /* light border */
+  border-radius: 10px;
+
+  cursor: pointer;
+  transition: all .3s ease-in-out;
+}
+
+.insert-task-button:hover{
+  transform: scale(1.04);
+  background: rgba(255, 255, 255, 0.4);
+  border: 2px solid rgba(255, 255, 255, 0.5);
+}
+
+.insert-task-button:active {
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  transition: .02s;
+  transform: scale(0.98);
+  outline: none;
+}
+
+.insert-list-popup {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  backdrop-filter: blur(0px); /* blur */
+  -webkit-backdrop-filter: blur(0px); /* blur for Safari */
+
+  z-index: 2;
+  pointer-events: none;
+  opacity: 0;
+
+  transition:
+      opacity 0.3s ease-in-out,
+      backdrop-filter 0.3s ease-in-out,
+      -webkit-backdrop-filter 0.3s ease-in-out;
+}
+
+.insert-list-popup.open {
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.in-list-popup {
+  position: relative;
+  background: rgba(98, 105, 255, 0.9);
+  backdrop-filter: blur(10px); /* blur */
+  -webkit-backdrop-filter: blur(10px); /* blur for Safari */
+  border: 4px solid rgba(79, 91, 255, 0.9); /* light border */
+  padding: 10px 20px;
+  border-radius: 12px;
+  flex-direction: column;
+  width: 400px;
+}
+
+.in-task-popup {
+  position: relative;
+  background: rgba(98, 105, 255, 0.9);
+  backdrop-filter: blur(10px); /* blur */
+  -webkit-backdrop-filter: blur(10px); /* blur for Safari */
+  border: 4px solid rgba(79, 91, 255, 0.9); /* light border */
+  padding: 10px 20px;
+  border-radius: 12px;
+  flex-direction: column;
+  width: 600px;
+}
+
+.close-cross {
+  position: absolute;
+  z-index: 3;
+  top: 8px;
+  right: 8px;
+  background: transparent;
+  cursor: pointer;
+  border: none;
+  font-size: 15px;
+  transition: 0.2s ease-in-out;
+}
+
+.close-cross:hover {
+  transform: scale(1.3);
+}
+
+.insert-list-text {
+  margin: 0;
+  margin-bottom: 10px;
+  font-size: 30px;
+}
+
+.new-list-name-textbox {
+  background: rgba(255, 255, 255, 0.3); /* transparent white bg */
+  backdrop-filter: blur(10px); /* blur */
+  -webkit-backdrop-filter: blur(10px); /* blur for Safari */
+  border: 2px solid rgba(255, 255, 255, 0.4); /* light border */
+  border-radius: 5px;
+  width: 100%;
+  margin-top: 10px;
+  margin-bottom: 20px;
+  font-size: 25px;
+}
+
+.new-list-name-label {
+  font-size: 20px;
+}
+
+.attention {
+  font-size: 15px;
+  pointer-events: none;
+  color: #ff5f5f;
+}
+
+.list-name-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
 .listnb-and-button {
+  z-index: 10;
   display: flex;
   justify-content: space-between;
   align-items: stretch;
@@ -171,6 +634,31 @@ function SendMessageToBack(cmd) {
   -webkit-backdrop-filter: blur(10px); /* blur for Safari */
   border: 2px solid rgba(255, 255, 255, 0.4); /* light border */
   border-radius: 10px;
+}
+
+.insert-list-button {
+  background: rgba(255, 255, 255, 0.3); /* transparent white bg */
+  backdrop-filter: blur(10px); /* blur */
+  -webkit-backdrop-filter: blur(10px); /* blur for Safari */
+  border: 2px solid rgba(255, 255, 255, 0.4); /* light border */
+  border-radius: 10px;
+
+  cursor: pointer;
+  transition: all .3s ease-in-out;
+}
+
+.insert-list-button:hover{
+  transform: scale(1.04);
+  background: rgba(255, 255, 255, 0.4);
+  border: 2px solid rgba(255, 255, 255, 0.5);
+}
+
+.insert-list-button:active {
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  transition: .02s;
+  transform: scale(0.98);
+  outline: none;
 }
 
 .add-new-task-button {
@@ -196,7 +684,33 @@ function SendMessageToBack(cmd) {
 .add-new-task-button:active {
   background: rgba(33, 43, 255, 0.5);
   border: 2px solid rgba(128, 135, 255, 0.6);
-  transition: .03s;
+  transition: .02s;
+  transform: scale(0.98);
+  outline: none;
+}
+
+.add-new-list-button {
+  width: 100%;
+  background: rgba(33, 43, 255, 0.5);
+  backdrop-filter: blur(10px); /* blur */
+  -webkit-backdrop-filter: blur(10px); /* blur for Safari */
+  border: 2px solid rgba(128, 135, 255, 0.7); /* light border */
+  border-radius: 10px;
+
+  cursor: pointer;
+  transition: all .3s ease-in-out;
+}
+
+.add-new-list-button:hover{
+  transform: scale(1.04);
+  background: rgba(33, 43, 255, 0.6);
+  border: 2px solid rgba(128, 135, 255, 0.8);
+}
+
+.add-new-list-button:active {
+  background: rgba(33, 43, 255, 0.5);
+  border: 2px solid rgba(128, 135, 255, 0.6);
+  transition: .02s;
   transform: scale(0.98);
   outline: none;
 }
@@ -233,13 +747,33 @@ function SendMessageToBack(cmd) {
 
 .tasks {
   flex: 1;
+  position: relative;
   padding: 10px;
   background: rgba(255, 255, 255, 0.2); /* transparent white bg */
   backdrop-filter: blur(10px); /* blur */
   -webkit-backdrop-filter: blur(10px); /* blur for Safari */
   border: 1px solid rgba(255, 255, 255, 0.2); /* light border */
   border-radius: 10px;
+
   overflow-y: auto;
+}
+
+.tasks::-webkit-scrollbar {
+  width: 10px;
+  background: rgba(255, 255, 255, 0.3); /* transparent white bg */
+  backdrop-filter: blur(10px); /* blur */
+  -webkit-backdrop-filter: blur(10px); /* blur for Safari */
+  border: 2px solid rgba(255, 255, 255, 0.4); /* light border */
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.tasks::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.3); /* прозорий чорний */
+  border-radius: 10px;
+  border: 2px solid rgba(255, 255, 255, 0.4); /* контур */
+  cursor: pointer;
+
 }
 
 .tasks ul {
@@ -262,6 +796,16 @@ function SendMessageToBack(cmd) {
   -webkit-backdrop-filter: blur(10px); /* blur for Safari */
   border: 2px solid rgba(115, 122, 253, 0.7); /* light border */
   border-radius: 10px;
+
+  transition: all .1s ease-in-out;
+}
+
+.tasks-box:hover {
+  background: rgba(44, 55, 255, 0.3);
+  border: 2px solid rgba(97, 106, 255, 0.7);
+  border-radius: 10px;
+  outline: none !important;
+  transform: scale(1.01);
 }
 
 .tasks-box-section {
@@ -317,8 +861,8 @@ function SendMessageToBack(cmd) {
 
 .list-button:hover {
   transform: scale(1.04);
-  background: rgba(95, 102, 251, 0.4);
-  border: 2px solid rgba(115, 122, 253, 0.8);
+  background: rgba(44, 55, 255, 0.3);
+  border: 2px solid rgba(97, 106, 255, 0.7);
 }
 
 .list-button:active {
@@ -334,11 +878,26 @@ function SendMessageToBack(cmd) {
 .list-button:focus-visible,
 .list-button:active,
 .list-button:hover,
-.add-new-task-button,
+.add-new-task-button,close-cross
 .add-new-task-button:focus,
 .add-new-task-button:focus-visible,
 .add-new-task-button:active,
-.add-new-task-button:hover {
+.add-new-task-button:hover,
+.add-new-list-button,
+.add-new-list-button:focus,
+.add-new-list-button:focus-visible,
+.add-new-list-button:active,
+.add-new-list-button:hover,
+.close-cross,
+.close-cross:focus,
+.close-cross:focus-visible,
+.close-cross:active,
+.close-cross:hover,
+.insert-list-button,
+.insert-list-button:focus,
+.insert-list-button:focus-visible,
+.insert-list-button:active,
+.insert-list-button:hover {
   outline: none !important;
 }
 

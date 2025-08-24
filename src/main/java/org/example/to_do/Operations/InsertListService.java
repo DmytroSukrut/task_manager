@@ -1,19 +1,19 @@
 package org.example.to_do.Operations;
 
 import org.example.to_do.DAO.UsersOperator;
-import org.example.to_do.SpecialClasses.UserDTO;
 import org.springframework.stereotype.Service;
 
 @Service
-public class GetUserInfoService {
+public class InsertListService {
 
     private final UsersOperator usersOperator;
 
-    public GetUserInfoService(UsersOperator usersOperator) {
+    public InsertListService(UsersOperator usersOperator) {
         this.usersOperator = usersOperator;
     }
 
-    public UserDTO GetUsersInfo(String email) {
-        return usersOperator.GetUsersInfo(email);
+    public void insertList(int userID, String listName) {
+        usersOperator.InsertList(userID, listName);
     }
+
 }
